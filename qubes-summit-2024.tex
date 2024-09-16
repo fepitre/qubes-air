@@ -15,21 +15,43 @@
 
 \begin{frame}{Overview}
     \begin{itemize}
+		\item https://www.qubes-os.org/news/2018/01/22/qubes-air/
         \item Understanding communication between Qubes OS hosts.
         \item Different classes involved in the communication process.
         \item RPC requests and policy processing.
         \item Relay mechanisms for remote communication.
+		\item https://github.com/QubesOS/qubes-issues/issues/9015
+		\item First POC in Qubes Summit 2022!\footnote{https://gist.github.com/fepitre/7af571bbc9de86824e543e2fd49be0aa}
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Classes}
+\begin{frame}{Introducing RemoteVM class}
     \begin{itemize}
-        \item The communication uses the following classes:
+        \item \textbf{What is a RemoteVM?}
         \begin{itemize}
-            \item \textbf{BaseVM}: The base class for all VMs.
-            \item \textbf{LocalVM}: Represents a VM on the local QubesOS.
-            \item \textbf{RemoteVM}: Represents a VM on a remote QubesOS.
-            \item \textbf{RelayVM(RemoteVM)}: Acts as a relay for communication with remote VMs.
+            \item A general term for a system that can receive RPC requests from a local Qubes OS environment, but it is hosted remotely.
+            \item Can be a qube on a remote Qubes OS host or system, such as:
+            \begin{itemize}
+                \item Standard Linux or Windows machines,
+                \item KVM-based virtual machines,
+                \item Devices with different architectures (e.g. Raspberry Pi).
+            \end{itemize}
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Introducing RelayVM class}
+    \begin{itemize}
+        \item \textbf{What is a RelayVM?}
+        \begin{itemize}
+            \item A specialized LocalVM (formerly known as QubesVM) or a RemoteVM that acts as a bridge between the local and remote Qubes OS hosts.
+            \item Responsible for forwarding RPC requests between a \textbf{RelayVM} (on the local host) and another \textbf{RelayVM} (on the remote host).
+			\item Forwarding RPC requests is made with a given \texttt{TRANSPORT\_RPC} service:
+			\begin{itemize}
+				\item qubesair.SSHProxy
+				\item qubesair.WireguardProxy
+				\item ...
+			\end{itemize}
         \end{itemize}
     \end{itemize}
 \end{frame}
@@ -43,15 +65,28 @@
     \end{center}
 \end{frame}
 
+\begin{frame}{General Communication Workflow}
+    \begin{enumerate}
+        \item \textbf{Local-Qube} initiates an RPC request to \textbf{Remote-Qube} (a \textbf{RemoteVM}).
+        \item \textbf{Local-QubesOS} checks the RPC policy and routes the request through \textbf{Local-Relay}.
+        \item \textbf{Local-Relay} invokes \textbf{TRANSPORT\_RPC} to forward the request to \texttt{Remote-Relay}.
+        \item \textbf{Remote-Relay} forwards the request to \textbf{Remote-Qube}.
+        \item \textbf{Remote-QubesOS} processes the request, checks policies, and returns the response.
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Particular Case: Non-QubesOS Host RemoteVM}
+	\begin{center}
+        \includegraphics[width=\linewidth]{particular.png}
+    \end{center}
+\end{frame}
 
 \begin{frame}{Particular Case: Non-QubesOS Host RemoteVM}
     \begin{itemize}
         \item RemoteVM can be on standard Linux or Windows machines, RPi, etc.
         \item Useful for interaction with other virtual machines (e.g. KVM VMs).
+		\item Delegate high resource usage to dedicated hosts.
     \end{itemize}
-	\begin{center}
-        \includegraphics[width=\linewidth]{particular.png}
-    \end{center}
 \end{frame}
 
 \begin{frame}{Summary}
